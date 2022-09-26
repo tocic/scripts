@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Extract files from a .tar archive.
+#
+
+if (($# != 2)); then
+  echo "Usage: unpack_tar_archive ARCHIVE DIR"
+  exit 1
+fi
+
+tar --extract --file "$1" --directory "$2" --verbose

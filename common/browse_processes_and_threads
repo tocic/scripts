@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Browse processes and threads.
+#
+
+pstree --color age \
+  --show-parents --show-pids \
+  --thread-names \
+  --uid-changes \
+  --unicode \
+  | less --RAW-CONTROL-CHARS

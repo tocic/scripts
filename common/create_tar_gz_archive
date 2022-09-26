@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Create a .tar.gz archive.
+#
+
+if (($# < 2)); then
+  echo "Usage: create_tar_gz_archive ARCHIVE FILE..."
+  exit 1
+fi
+
+tar --create --file "$1.tar.gz" --gzip --verbose "${@:2}"

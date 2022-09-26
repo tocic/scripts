@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# Translate the selected text into the specified language.
+#
+# Dependencies: libnotify, wget, xsel
+
+if (($# > 1)); then
+  echo "Usage: translate_selection LANG"
+  exit 1
+fi
+
+readonly URL="https://translate.googleapis.com/translate_a/single"
+
+notify-send --icon=info "$(xsel --output)" \
+  "$(wget --output-document="-" --quiet --user-agent="Mozilla/5.0" \
+    "${URL}?client=gtx&sl=auto&tl=$1&dt=t&q=$(xsel -o | sed "s/[\"'<>]//g")" \
+    | sed "s/,,,0]],,.*//g" \
+    | awk -F'"' '{print $2}')"
