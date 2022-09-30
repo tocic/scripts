@@ -3,6 +3,7 @@
 
 !/.gitignore
 !/LICENSE.txt
+!/README.adoc
 
 !/common/**
 !/laptop/**
