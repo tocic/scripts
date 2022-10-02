@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# Backup the names of installed packages.
+#
+# Dependencies: pacman
+
+readonly DEFAULT_BACKUP_DIR="/home/tocic/backup/pacman"
+
+readonly L_OPTS="help,backup_dir:"
+readonly S_OPTS="d:"
+
+readonly USAGE=$(
+  cat <<END
+SYNOPSIS
+  $(basename "$0") [OPTION]...
+
+DESCRIPTION
+  Backup the names of installed packages.
+
+OPTIONS
+  --help
+    display this help and exit
+  -d, --backup_dir DIR, --backup_dir=DIR
+    change the backup directory from ${DEFAULT_BACKUP_DIR} to DIR
+END
+)
+
+opts=$(getopt --options=${S_OPTS} --longoptions=${L_OPTS} --name "$0" -- "$@")
+if (($? != 0)); then
+  echo
+  echo "${USAGE}"
+  exit 1
+fi
+
+eval set -- "${opts}"
+
+backup_dir="${DEFAULT_BACKUP_DIR}"
+need_help=false
+
+while true; do
+  case "$1" in
+    --help)
+      need_help=true
+      shift
+      break
+      ;;
+    -d | --backup_dir)
+      backup_dir="$2"
+      shift 2
+      ;;
+    --)
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ $need_help == true ]]; then
+  echo "${USAGE}"
+  exit 0
+fi
+
+if (($# != 0)); then
+  echo "No positional arguments are expected."
+  echo
+  echo "${USAGE}"
+  exit 2
+fi
+
+pacman --query --explicit --native --quiet \
+  >"${backup_dir}/explicit_native.pkg"
+pacman --query --explicit --foreign --quiet \
+  >"${backup_dir}/explicit_foreign.pkg"
+pacman --query --deps --native --unrequired --unrequired --quiet \
+  >"${backup_dir}/implicit_optional_native.pkg"
+pacman --query --deps --foreign --quiet \
+  >"${backup_dir}/implicit_foreign.pkg"

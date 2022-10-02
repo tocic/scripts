@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# List dependency packages that are no longer required by any installed package.
+#
+# Dependencies: pacman
+
+pacman --query --deps --unrequired --quiet

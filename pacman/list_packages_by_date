@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# List packages sorted by installation date.
+#
+# Dependencies: expac
+
+expac --timefmt="%Y-%m-%d %T" '%l %n' \
+  | sort
