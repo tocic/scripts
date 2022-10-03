@@ -2,14 +2,64 @@
 #
 # Translate the selected text into the specified language.
 #
-# Dependencies: coreutils, gawk, libnotify, sed, wget, xsel
+# Dependencies: coreutils, gawk, libnotify, sed, util-linux, wget, xsel
 
-if (($# > 1)); then
-  echo "Usage: translate_selection LANG"
+readonly URL="https://translate.googleapis.com/translate_a/single"
+
+readonly L_OPTS="help"
+readonly S_OPTS="h"
+
+readonly USAGE=$(
+  cat <<END
+SYNOPSIS
+  $(basename "$0") [OPTION]... LANG
+
+DESCRIPTION
+  Translate the selected text into LANG. Possible LANG values: en, de, etc.
+  See https://cloud.google.com/translate/docs/languages for a complete list.
+
+OPTIONS
+  -h, --help
+    display this help and exit
+END
+)
+
+opts=$(getopt --options=${S_OPTS} --longoptions=${L_OPTS} --name "$0" -- "$@")
+if (($? != 0)); then
+  echo
+  echo "${USAGE}"
   exit 1
 fi
 
-readonly URL="https://translate.googleapis.com/translate_a/single"
+eval set -- "${opts}"
+
+need_help=false
+
+while true; do
+  case "$1" in
+    -h | --help)
+      need_help=true
+      shift
+      break
+      ;;
+    --)
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ $need_help == true ]]; then
+  echo "${USAGE}"
+  exit 0
+fi
+
+if (($# != 1)); then
+  echo "Exactly one positional argument is expected."
+  echo
+  echo "${USAGE}"
+  exit 2
+fi
 
 notify-send --icon=info "$(xsel --output)" \
   "$(wget --output-document="-" --quiet --user-agent="Mozilla/5.0" \

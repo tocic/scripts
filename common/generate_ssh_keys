@@ -2,11 +2,60 @@
 #
 # Generate an SSH key pair.
 #
-# Dependencies: coreutils, openssh
+# Dependencies: coreutils, openssh, util-linux
+
+readonly L_OPTS="help"
+readonly S_OPTS="h"
+
+readonly USAGE=$(
+  cat <<END
+SYNOPSIS
+  $(basename "$0") [OPTION]... FILE
+
+DESCRIPTION
+  Generate an SSH key pair {FILE, FILE.pub} using the ed25519 key type.
+
+OPTIONS
+  -h, --help
+    display this help and exit
+END
+)
+
+opts=$(getopt --options=${S_OPTS} --longoptions=${L_OPTS} --name "$0" -- "$@")
+if (($? != 0)); then
+  echo
+  echo "${USAGE}"
+  exit 1
+fi
+
+eval set -- "${opts}"
+
+need_help=false
+
+while true; do
+  case "$1" in
+    -h | --help)
+      need_help=true
+      shift
+      break
+      ;;
+    --)
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ $need_help == true ]]; then
+  echo "${USAGE}"
+  exit 0
+fi
 
 if (($# != 1)); then
-  echo "Usage: generate_ssh_keys FILENAME"
-  exit 1
+  echo "Exactly one positional argument is expected."
+  echo
+  echo "${USAGE}"
+  exit 2
 fi
 
 ssh-keygen -t ed25519 -C "" -f "$1"

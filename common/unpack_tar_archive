@@ -2,11 +2,60 @@
 #
 # Extract files from a .tar archive.
 #
-# Dependencies: coreutils, tar
+# Dependencies: coreutils, tar, util-linux
+
+readonly L_OPTS="help"
+readonly S_OPTS="h"
+
+readonly USAGE=$(
+  cat <<END
+SYNOPSIS
+  $(basename "$0") [OPTION]... ARCHIVE DIR
+
+DESCRIPTION
+  Extract files from the .tar archive ARCHIVE to the directory DIR.
+
+OPTIONS
+  -h, --help
+    display this help and exit
+END
+)
+
+opts=$(getopt --options=${S_OPTS} --longoptions=${L_OPTS} --name "$0" -- "$@")
+if (($? != 0)); then
+  echo
+  echo "${USAGE}"
+  exit 1
+fi
+
+eval set -- "${opts}"
+
+need_help=false
+
+while true; do
+  case "$1" in
+    -h | --help)
+      need_help=true
+      shift
+      break
+      ;;
+    --)
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ $need_help == true ]]; then
+  echo "${USAGE}"
+  exit 0
+fi
 
 if (($# != 2)); then
-  echo "Usage: unpack_tar_archive ARCHIVE DIR"
-  exit 1
+  echo "Exactly two positional arguments are expected."
+  echo
+  echo "${USAGE}"
+  exit 2
 fi
 
 tar --extract --file "$1" --directory "$2" --verbose

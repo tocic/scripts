@@ -2,11 +2,60 @@
 #
 # Create a .tar.gz archive.
 #
-# Dependencies: coreutils, gzip, tar
+# Dependencies: coreutils, gzip, tar, util-linux
+
+readonly L_OPTS="help"
+readonly S_OPTS="h"
+
+readonly USAGE=$(
+  cat <<END
+SYNOPSIS
+  $(basename "$0") [OPTION]... ARCHIVE FILE...
+
+DESCRIPTION
+  Create an ARCHIVE.tar.gz from FILEs.
+
+OPTIONS
+  -h, --help
+    display this help and exit
+END
+)
+
+opts=$(getopt --options=${S_OPTS} --longoptions=${L_OPTS} --name "$0" -- "$@")
+if (($? != 0)); then
+  echo
+  echo "${USAGE}"
+  exit 1
+fi
+
+eval set -- "${opts}"
+
+need_help=false
+
+while true; do
+  case "$1" in
+    -h | --help)
+      need_help=true
+      shift
+      break
+      ;;
+    --)
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ $need_help == true ]]; then
+  echo "${USAGE}"
+  exit 0
+fi
 
 if (($# < 2)); then
-  echo "Usage: create_tar_gz_archive ARCHIVE FILE..."
-  exit 1
+  echo "At least two positional arguments are expected."
+  echo
+  echo "${USAGE}"
+  exit 2
 fi
 
 tar --create --file "$1.tar.gz" --gzip --verbose "${@:2}"

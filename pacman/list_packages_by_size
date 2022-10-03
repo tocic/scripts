@@ -2,7 +2,61 @@
 #
 # List packages sorted by installation size.
 #
-# Dependencies: coreutils, gawk, pacman
+# Dependencies: coreutils, gawk, pacman, util-linux
+
+readonly L_OPTS="help"
+readonly S_OPTS="h"
+
+readonly USAGE=$(
+  cat <<END
+SYNOPSIS
+  $(basename "$0") [OPTION]...
+
+DESCRIPTION
+  List packages sorted by installation size.
+
+OPTIONS
+  -h, --help
+    display this help and exit
+END
+)
+
+opts=$(getopt --options=${S_OPTS} --longoptions=${L_OPTS} --name "$0" -- "$@")
+if (($? != 0)); then
+  echo
+  echo "${USAGE}"
+  exit 1
+fi
+
+eval set -- "${opts}"
+
+need_help=false
+
+while true; do
+  case "$1" in
+    -h | --help)
+      need_help=true
+      shift
+      break
+      ;;
+    --)
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ $need_help == true ]]; then
+  echo "${USAGE}"
+  exit 0
+fi
+
+if (($# > 0)); then
+  echo "No positional arguments are expected."
+  echo
+  echo "${USAGE}"
+  exit 2
+fi
 
 pacman --query --info \
   | awk '/^Name/{name=$3}/^Installed Size/{print $4$5, name}' \
