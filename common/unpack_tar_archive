@@ -2,6 +2,7 @@
 #
 # Extract files from a .tar archive.
 #
+# Dependencies: coreutils, tar
 
 if (($# != 2)); then
   echo "Usage: unpack_tar_archive ARCHIVE DIR"

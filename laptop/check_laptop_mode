@@ -2,6 +2,7 @@
 #
 # Check if the laptop is plugged into AC power.
 #
+# Dependencies: coreutils
 
 if (($(</proc/sys/vm/laptop_mode) == 0)); then
   echo "plugged into AC power"

@@ -2,7 +2,7 @@
 #
 # Translate the selected text into the specified language.
 #
-# Dependencies: libnotify, wget, xsel
+# Dependencies: coreutils, gawk, libnotify, sed, wget, xsel
 
 if (($# > 1)); then
   echo "Usage: translate_selection LANG"

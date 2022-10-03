@@ -2,7 +2,7 @@
 #
 # List backup files that were modified.
 #
-# Dependencies: pacman
+# Dependencies: grep, pacman
 
 pacman --query --info --info \
   | grep --only-match --perl-regexp "^MODIFIED\s+\K.*"

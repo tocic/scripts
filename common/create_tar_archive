@@ -2,6 +2,7 @@
 #
 # Create a .tar archive.
 #
+# Dependencies: coreutils, tar
 
 if (($# < 2)); then
   echo "Usage: create_tar_archive ARCHIVE FILE..."

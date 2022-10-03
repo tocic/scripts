@@ -2,6 +2,7 @@
 #
 # Browse processes and threads.
 #
+# Dependencies: less, psmisc
 
 pstree --color age \
   --show-parents --show-pids \

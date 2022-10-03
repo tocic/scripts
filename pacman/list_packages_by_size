@@ -2,7 +2,7 @@
 #
 # List packages sorted by installation size.
 #
-# Dependencies: pacman
+# Dependencies: coreutils, gawk, pacman
 
 pacman --query --info \
   | awk '/^Name/{name=$3}/^Installed Size/{print $4$5, name}' \

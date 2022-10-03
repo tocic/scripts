@@ -2,6 +2,7 @@
 #
 # Run the command detached from the terminal.
 #
+# Dependencies: coreutils, util-linux
 
 readonly L_OPTS="help"
 readonly S_OPTS="h"

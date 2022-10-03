@@ -2,7 +2,7 @@
 #
 # Generate an SSH key pair.
 #
-# Dependencies: openssh
+# Dependencies: coreutils, openssh
 
 if (($# != 1)); then
   echo "Usage: generate_ssh_keys FILENAME"

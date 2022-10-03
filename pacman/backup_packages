@@ -2,7 +2,7 @@
 #
 # Backup the names of installed packages.
 #
-# Dependencies: pacman
+# Dependencies: coreutils, pacman, util-linux
 
 readonly DEFAULT_BACKUP_DIR="/home/tocic/backup/pacman"
 
