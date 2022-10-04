@@ -7,12 +7,20 @@
 readonly URL="https://translate.googleapis.com/translate_a/single"
 
 readonly L_OPTS="help"
-readonly S_OPTS="h"
+readonly OPTS="h"
 
-readonly USAGE=$(
+readonly CMD=$(basename "$0")
+readonly USAGE="${CMD} [OPTION]... LANG"
+readonly USAGE_ERR_MSG=$(
+  cat <<END
+Usage: ${USAGE}
+Try '${CMD} --help' for more information.
+END
+)
+readonly HELP=$(
   cat <<END
 SYNOPSIS
-  $(basename "$0") [OPTION]... LANG
+  ${USAGE}
 
 DESCRIPTION
   Translate the selected text into LANG. Possible LANG values: en, de, etc.
@@ -24,11 +32,10 @@ OPTIONS
 END
 )
 
-opts=$(getopt --options=${S_OPTS} --longoptions=${L_OPTS} --name "$0" -- "$@")
+opts=$(getopt --options=${OPTS} --longoptions=${L_OPTS} --name "${CMD}" -- "$@")
 if (($? != 0)); then
-  echo
-  echo "${USAGE}"
-  exit 1
+  echo "${USAGE_ERR_MSG}"
+  exit 2
 fi
 
 eval set -- "${opts}"
@@ -50,14 +57,13 @@ while true; do
 done
 
 if [[ $need_help == true ]]; then
-  echo "${USAGE}"
+  echo "${HELP}"
   exit 0
 fi
 
 if (($# != 1)); then
-  echo "Exactly one positional argument is expected."
-  echo
-  echo "${USAGE}"
+  echo "${CMD}: expected 1 argument; got $#"
+  echo "${USAGE_ERR_MSG}"
   exit 2
 fi
 

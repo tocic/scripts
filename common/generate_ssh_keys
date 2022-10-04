@@ -5,12 +5,20 @@
 # Dependencies: coreutils, openssh, util-linux
 
 readonly L_OPTS="help"
-readonly S_OPTS="h"
+readonly OPTS="h"
 
-readonly USAGE=$(
+readonly CMD=$(basename "$0")
+readonly USAGE="${CMD} [OPTION]... FILE"
+readonly USAGE_ERR_MSG=$(
+  cat <<END
+Usage: ${USAGE}
+Try '${CMD} --help' for more information.
+END
+)
+readonly HELP=$(
   cat <<END
 SYNOPSIS
-  $(basename "$0") [OPTION]... FILE
+  ${USAGE}
 
 DESCRIPTION
   Generate an SSH key pair {FILE, FILE.pub} using the ed25519 key type.
@@ -21,11 +29,10 @@ OPTIONS
 END
 )
 
-opts=$(getopt --options=${S_OPTS} --longoptions=${L_OPTS} --name "$0" -- "$@")
+opts=$(getopt --options=${OPTS} --longoptions=${L_OPTS} --name "${CMD}" -- "$@")
 if (($? != 0)); then
-  echo
-  echo "${USAGE}"
-  exit 1
+  echo "${USAGE_ERR_MSG}"
+  exit 2
 fi
 
 eval set -- "${opts}"
@@ -47,14 +54,13 @@ while true; do
 done
 
 if [[ $need_help == true ]]; then
-  echo "${USAGE}"
+  echo "${HELP}"
   exit 0
 fi
 
 if (($# != 1)); then
-  echo "Exactly one positional argument is expected."
-  echo
-  echo "${USAGE}"
+  echo "${CMD}: expected 1 argument; got $#"
+  echo "${USAGE_ERR_MSG}"
   exit 2
 fi
 
