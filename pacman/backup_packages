@@ -6,8 +6,8 @@
 
 readonly DEFAULT_BACKUP_DIR="/home/tocic/backup/pacman"
 
-readonly L_OPTS="help,backup_dir:"
-readonly S_OPTS="d:"
+readonly L_OPTS="backup_dir:,help"
+readonly S_OPTS="d:h"
 
 readonly USAGE=$(
   cat <<END
@@ -18,10 +18,10 @@ DESCRIPTION
   Backup the names of installed packages.
 
 OPTIONS
-  --help
-    display this help and exit
   -d, --backup_dir DIR, --backup_dir=DIR
     change the backup directory from ${DEFAULT_BACKUP_DIR} to DIR
+  -h, --help
+    display this help and exit
 END
 )
 
@@ -39,14 +39,14 @@ need_help=false
 
 while true; do
   case "$1" in
-    --help)
-      need_help=true
-      shift
-      break
-      ;;
     -d | --backup_dir)
       backup_dir="$2"
       shift 2
+      ;;
+    -h | --help)
+      need_help=true
+      shift
+      break
       ;;
     --)
       shift
