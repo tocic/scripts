@@ -76,8 +76,11 @@ fi
 pacman --query --explicit --native --quiet \
   >"${backup_dir}/explicit_native.pkg"
 pacman --query --explicit --foreign --quiet \
-  >"${backup_dir}/explicit_foreign.pkg"
+  >"${backup_dir}/explicit_foreign.pkg" \
+  || true
 pacman --query --deps --native --unrequired --unrequired --quiet \
-  >"${backup_dir}/implicit_optional_native.pkg"
+  >"${backup_dir}/implicit_optional_native.pkg" \
+  || true
 pacman --query --deps --foreign --quiet \
-  >"${backup_dir}/implicit_foreign.pkg"
+  >"${backup_dir}/implicit_foreign.pkg" \
+  || true
