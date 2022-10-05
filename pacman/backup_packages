@@ -4,7 +4,7 @@
 #
 # Dependencies: coreutils, pacman, util-linux
 
-readonly DEFAULT_BACKUP_DIR="/home/tocic/backup/pacman"
+readonly DEFAULT_BACKUP_DIR="${HOME}/backup/pacman"
 
 readonly L_OPTS="backup_dir:,help"
 readonly OPTS="d:h"
