@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# Turn off/on the touchpad.
+#
+# Dependencies: coreutils, grep, util-linux, xorg-xinput
+
+readonly L_OPTS="help"
+readonly OPTS="h"
+
+readonly CMD=$(basename "$0")
+readonly USAGE="${CMD} [OPTION]..."
+readonly USAGE_ERR_MSG=$(
+  cat <<END
+Usage: ${USAGE}
+Try '${CMD} --help' for more information.
+END
+)
+readonly HELP=$(
+  cat <<END
+SYNOPSIS
+  ${USAGE}
+
+DESCRIPTION
+  Turn off/on the touchpad.
+
+OPTIONS
+  -h, --help
+    display this help and exit
+END
+)
+
+opts=$(getopt --options=${OPTS} --longoptions=${L_OPTS} --name "${CMD}" -- "$@")
+if (($? != 0)); then
+  echo "${USAGE_ERR_MSG}"
+  exit 2
+fi
+
+eval set -- "${opts}"
+
+need_help=false
+
+while true; do
+  case "$1" in
+    -h | --help)
+      need_help=true
+      shift
+      break
+      ;;
+    --)
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ $need_help == true ]]; then
+  echo "${HELP}"
+  exit 0
+fi
+
+if (($# != 0)); then
+  echo "${CMD}: expected 0 arguments; got $#"
+  echo "${USAGE_ERR_MSG}"
+  exit 2
+fi
+
+readonly DEVICE=$(
+  LC_ALL=C xinput list --name-only \
+    | grep --extended --ignore-case "(touchpad|glidepoint)"
+)
+
+if LC_ALL=C xinput list-props "${DEVICE}" \
+     | grep --perl-regexp --quiet "Device Enabled[^:]*:\s*1"; then
+  xinput disable "${DEVICE}"
+else
+  xinput enable "${DEVICE}"
+fi
