@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# Backup the home directory to the borg archive.
+#
+# Dependencies: coreutils, borg, util-linux
+
+readonly DEFAULT_ARCHIVE_NAME="{user}_{now:%Y-%m-%d_%H:%M:%S}"
+
+readonly L_OPTS="help"
+readonly OPTS="h"
+
+readonly CMD=$(basename "$0")
+readonly USAGE="${CMD} [OPTION]... REPO_DIR"
+readonly USAGE_ERR_MSG=$(
+  cat <<END
+Usage: ${USAGE}
+Try '${CMD} --help' for more information.
+END
+)
+readonly HELP=$(
+  cat <<END
+SYNOPSIS
+  ${USAGE}
+
+DESCRIPTION
+  Backup the home directory to the borg archive REPO_DIR::ARCHIVE.
+
+OPTIONS
+  a, --archive_name ARCHIVE, --archive_name=ARCHIVE
+    change the borg archive name from \$user_\$date_\$time to ARCHIVE
+  h, --help
+    display this help and exit
+END
+)
+
+opts=$(getopt --options=${OPTS} --longoptions=${L_OPTS} --name "${CMD}" -- "$@")
+if (($? != 0)); then
+  echo "${USAGE_ERR_MSG}"
+  exit 2
+fi
+
+eval set -- "${opts}"
+
+archive_name="${DEFAULT_ARCHIVE_NAME}"
+need_help=false
+
+while true; do
+  case "$1" in
+    -a | --archive_name)
+      archive_name="$2"
+      shift 2
+      ;;
+    -h | --help)
+      need_help=true
+      shift
+      break
+      ;;
+    --)
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ $need_help == true ]]; then
+  echo "${HELP}"
+  exit 0
+fi
+
+if (($# != 1)); then
+  echo "${CMD}: expected 1 argument; got $#"
+  echo "${USAGE_ERR_MSG}"
+  exit 2
+fi
+
+borg create \
+  --exclude "*/.cache" --exclude "*/__pycache__" \
+   --exclude-caches --exclude-nodump \
+  --progress \
+  --show-rc --stats \
+  "$(realpath --no-symlinks "$1")::${archive_name}" "${HOME}"
+
+declare -ir exit_code=$?
+
+if ((exit_code == 0 || exit_code == 1)); then
+  exit 0
+else
+  exit ${exit_code}
+fi
