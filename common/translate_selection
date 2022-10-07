@@ -9,7 +9,7 @@ readonly URL="https://translate.googleapis.com/translate_a/single"
 readonly L_OPTS="help"
 readonly OPTS="h"
 
-readonly CMD=$(basename "$0")
+readonly CMD="${0##*/}"
 readonly USAGE="${CMD} [OPTION]... LANG"
 readonly USAGE_ERR_MSG=$(
   cat <<END

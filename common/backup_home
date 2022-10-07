@@ -9,7 +9,7 @@ readonly DEFAULT_ARCHIVE_NAME="{user}_{now:%Y-%m-%d_%H:%M:%S}"
 readonly L_OPTS="help"
 readonly OPTS="h"
 
-readonly CMD=$(basename "$0")
+readonly CMD="${0##*/}"
 readonly USAGE="${CMD} [OPTION]... REPO_DIR"
 readonly USAGE_ERR_MSG=$(
   cat <<END

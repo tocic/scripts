@@ -7,7 +7,7 @@
 readonly L_OPTS="help"
 readonly OPTS="h"
 
-readonly CMD=$(basename "$0")
+readonly CMD="${0##*/}"
 readonly USAGE="${CMD} [OPTION]... FILE"
 readonly USAGE_ERR_MSG=$(
   cat <<END
