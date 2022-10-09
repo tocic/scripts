@@ -1,0 +1,235 @@
+#!/bin/bash
+#
+# Rebuild and reinstall AUR packages.
+#
+# Dependencies: coreutils, pacman, util-linux
+
+readonly DEFAULT_EXC_FILE="need_manual_intervention"
+readonly DEFAULT_EXC_PATTERNS="test_.+,.+_test"
+readonly DEFAULT_JOBS=1
+readonly DEFAULT_REPO="${HOME}/AUR"
+
+readonly CLR_END="\033[0m"    # reset color
+readonly CLR_EXC="\033[1;30m" # gray color for exceptions
+
+readonly L_OPTS="exceptions:,help,jobs:,patterns:"
+readonly OPTS="e:hj:p:"
+
+readonly CMD="${0##*/}"
+readonly USAGE="${CMD} [OPTION]... [REPO]..."
+readonly USAGE_ERR_MSG=$(
+  cat <<END
+Usage: ${USAGE}
+Try '${CMD} --help' for more information.
+END
+)
+readonly HELP=$(
+  cat <<END
+SYNOPSIS
+  ${USAGE}
+
+DESCRIPTION
+  Rebuild and reinstall packages in REPOs or ${DEFAULT_REPO}
+  if REPOs are not specified. The repository must have the following structure:
+    REPO root
+    |-- pkg A dir
+    |   |-- pkg AA dir (dependency of pkg A)
+    |   |-- pkg AB dir (dependency of pkg A)
+    |   |   |-- pkg ABA dir (dependency of pkg AB)
+    |   |   |   ...
+    |   |   |   optional file with exceptions for AB's dirs
+    |   |   ...
+    |   |   optional file with exceptions for A's dirs
+    |-- pkg B dir
+    |-- C dir
+    |   |-- pkg CA dir
+    |   |   ...
+    |   |   optional file with exceptions for C's dirs
+    |   ...
+    |   optional file with exceptions for root dirs
+
+  A pkg differs from a dir in that it contains a PKGBUILD file.
+
+OPTIONS
+  -e, --exceptions FILE, --exceptions=FILE
+    rename the exceptions file from '${DEFAULT_EXC_FILE}' to FILE;
+    files must contain a whitespace-separated list of dir base names
+  -h, --help
+    display this help and exit
+  -j, --jobs N, --jobs=N
+    make the packages using N jobs instead of ${DEFAULT_JOBS} by default
+  -p, --patterns PATTERNS, --patterns=PATTERNS
+    change the comma-separated list of pkg base name regexps 
+    from '${DEFAULT_EXC_PATTERNS}' to PATTERNS
+END
+)
+
+#######################################
+# Check if the directory is a package
+# Arguments:
+#   dir - directory path
+#######################################
+function is_pkg() {
+  local -r dir="$1"
+
+  [[ -f "${dir}/PKGBUILD" ]]
+}
+
+#######################################
+# Rebuild the valid non-excluded package
+# Arguments:
+#   pkg - package path
+#   jobs - number of jobs for makepkg
+#######################################
+function rebuild_pkg() {
+  local -r pkg="$1"
+  local -r jobs="$2"
+
+  local -r parent_dir="${pkg%/*}"
+  local install_options="--install"
+
+  if is_pkg "${parent_dir}"; then
+    local -r dep_string=" (dependency of the package ${parent_dir})"
+    install_options+=" --asdeps"
+  fi
+
+  echo "pkg ${pkg}${dep_string}"
+
+  cd "${pkg}"
+  MAKEFLAGS="-j${jobs}" makepkg --force "${install_options}" --syncdeps --rmdeps
+}
+
+#######################################
+# Rebuild each package in the directory
+# Globals:
+#   CLR_END - ANSI escape code for color reset
+#   CLR_EXC - ANSI escape code for exceptions color
+# Arguments:
+#   dir - directory path
+#   exc_filename - filename of the exceptions file
+#   exc_patterns - excluded patterns
+#   jobs - number of jobs for makepkg
+#######################################
+function rebuild_dir() {
+  local -r dir="$1"
+  local -r exc_filename="$2"
+  local -r exc_patterns="$3"
+  local -r jobs="$4"
+
+  {
+    local excluded_dirs
+    excluded_dirs=$(<"${dir}/${exc_filename}")
+  } 2>/dev/null
+
+  local subdir
+  for subdir in "${dir}"/*; do
+    if ! [[ -d ${subdir} ]]; then
+      continue
+    fi
+
+    local base="${subdir##*/}"
+
+    if [[ ${excluded_dirs} =~ (^|[[:space:]])"${base}"($|[[:space:]]) ]]; then
+      echo "dir ${subdir}"
+      echo -e " ${CLR_EXC}excluded by ${dir}/${exc_filename}${CLR_END}"
+      continue
+    fi
+
+    if is_pkg "${subdir}"; then
+      for exceptions_pattern in ${exc_patterns//,/ }; do
+        if grep --line-regexp --quiet "${exceptions_pattern}" <<<"${base}"; then
+          echo -e " ${CLR_EXC}excluded by '${exceptions_pattern}'${CLR_END}"
+          continue 2
+        fi
+      done
+
+      rebuild_dir "${subdir}" "${exc_filename}" "${exc_patterns}" "${jobs}"
+      rebuild_pkg "${subdir}"
+    else
+      rebuild_dir "${subdir}" "${exc_filename}" "${exc_patterns}" "${jobs}"
+    fi
+  done
+}
+
+#######################################
+# Main function
+# Globals:
+#   CMD - script basename
+#   DEFAULT_EXC_FILE - default filename of the exceptions file
+#   DEFAULT_EXC_PATTERNS - default excluded patterns
+#   DEFAULT_JOBS_NUMBER - default number of jobs for makepkg
+#   DEFAULT_REPO - default AUR repository path
+#   L_OPTS - long non-positional options (e.g. --help)
+#   OPTS - short non-positional options (e.g. --h)
+#   HELP - help message
+#   USAGE_ERR_MSG - usage error message
+#######################################
+function main() {
+  local opts
+  opts=$(getopt \
+      --options=${OPTS} --longoptions=${L_OPTS} \
+      --name "${CMD}" \
+      -- "$@"
+  )
+  if (($? != 0)); then
+    echo "${USAGE_ERR_MSG}"
+    exit 2
+  fi
+
+  eval set -- "${opts}"
+
+  local exc_filename="${DEFAULT_EXC_FILE}"
+  local exc_patterns="${DEFAULT_EXC_PATTERNS}"
+  local jobs="${DEFAULT_JOBS}"
+  local need_help=false
+
+  while true; do
+    case "$1" in
+      -e | --exceptions)
+        exc_filename="$2"
+        shift 2
+        ;;
+      -h | --help)
+        need_help=true
+        shift
+        break
+        ;;
+      -j | --jobs)
+        jobs="$2"
+        shift 2
+        ;;
+      -p | --patterns)
+        exc_patterns="$2"
+        shift 2
+        ;;
+      --)
+        shift
+        break
+        ;;
+    esac
+  done
+
+  if [[ $need_help == true ]]; then
+    echo "${HELP}"
+    exit 0
+  fi
+
+  local repo_list
+  if (($# == 0)); then
+    repo_list="${DEFAULT_REPO}"
+  else
+    while (($# != 0)); do
+      repo_list+="$1 "
+      shift
+    done
+  fi
+
+  local repo
+  for repo in ${repo_list}; do
+    local repo_dir
+    repo_dir=$(realpath --no-symlinks "${repo}")
+    rebuild_dir "${repo_dir}" "${exc_filename}" "${exc_patterns}" "${jobs}"
+  done
+}
+
+main "$@"
