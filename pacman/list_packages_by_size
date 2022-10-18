@@ -64,6 +64,6 @@ if (($# != 0)); then
   exit 2
 fi
 
-pacman --query --info \
+LC_ALL=C pacman --query --info \
   | awk '/^Name/{name=$3}/^Installed Size/{print $4$5, name}' \
   | sort -h
