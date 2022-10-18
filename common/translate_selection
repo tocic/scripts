@@ -2,9 +2,10 @@
 #
 # Translate the selected text into the specified language.
 #
-# Dependencies: coreutils, gawk, libnotify, sed, util-linux, wget, xsel
+# Dependencies: coreutils, gawk, jq, libnotify, sed, util-linux, wget, xsel
 
-readonly URL="https://translate.googleapis.com/translate_a/single"
+readonly API_ENDPOINT="https://translate.googleapis.com/translate_a/single"
+readonly USER_AGENT="Mozilla/5.0"
 
 readonly L_OPTS="help"
 readonly OPTS="h"
@@ -32,43 +33,93 @@ OPTIONS
 END
 )
 
-opts=$(getopt --options=${OPTS} --longoptions=${L_OPTS} --name "${CMD}" -- "$@")
-if (($? != 0)); then
-  echo "${USAGE_ERR_MSG}"
-  exit 2
-fi
+#######################################
+# Encode special characters per RFC 3986
+# Arguments:
+#   str - string to encode
+#######################################
+function urlencode() {
+  local -r str="$1"
 
-eval set -- "${opts}"
+  local -r LC_ALL="C"
 
-need_help=false
+  local char
+  while IFS="" read -r -d "" -n 1 char; do
+    case "${char}" in
+      [-_.~a-zA-Z0-9])
+        printf "%s" "${char}"
+        ;;
+      *)
+        printf "%%%02x" "'${char}"
+        ;;
+    esac
+  done < <(printf "%s" "${str}")
+}
 
-while true; do
-  case "$1" in
-    -h | --help)
-      need_help=true
-      shift
-      break
-      ;;
-    --)
-      shift
-      break
-      ;;
-  esac
-done
+#######################################
+# Main function
+# Globals:
+#   API_ENDPOINT - Google Translate API endpoint
+#   CMD - script basename
+#   HELP - help message
+#   L_OPTS - long non-positional options (e.g. --help)
+#   OPTS - short non-positional options (e.g. --h)
+#   USAGE_ERR_MSG - usage error message
+#   USER_AGENT - HTTP User-Agent header
+#######################################
+function main() {
+  local opts
+  opts=$(
+    getopt \
+      --options=${OPTS} --longoptions=${L_OPTS} \
+      --name "${CMD}" \
+      -- "$@"
+  )
+  if (($? != 0)); then
+    echo "${USAGE_ERR_MSG}"
+    exit 2
+  fi
 
-if [[ $need_help == true ]]; then
-  echo "${HELP}"
-  exit 0
-fi
+  eval set -- "${opts}"
 
-if (($# != 1)); then
-  echo "${CMD}: expected 1 argument; got $#"
-  echo "${USAGE_ERR_MSG}"
-  exit 2
-fi
+  local need_help=false
 
-notify-send --icon=info "$(xsel --output)" \
-  "$(wget --output-document="-" --quiet --user-agent="Mozilla/5.0" \
-    "${URL}?client=gtx&sl=auto&tl=$1&dt=t&q=$(xsel -o | sed "s/[\"'<>]//g")" \
-    | sed "s/,,,0]],,.*//g" \
-    | awk -F'"' '{print $2}')"
+  while true; do
+    case "$1" in
+      -h | --help)
+        need_help=true
+        shift
+        break
+        ;;
+      --)
+        shift
+        break
+        ;;
+    esac
+  done
+
+  if [[ $need_help == true ]]; then
+    echo "${HELP}"
+    exit 0
+  fi
+
+  if (($# != 1)); then
+    echo "${CMD}: expected 1 argument; got $#"
+    echo "${USAGE_ERR_MSG}"
+    exit 2
+  fi
+
+  local -r selection=$(xsel --output)
+
+  local url="${API_ENDPOINT}?client=gtx&sl=auto&tl=$1&dt=t&q="
+  url+=$(urlencode "${selection}")
+
+  local -r translation=$(
+    wget --output-document="-" --quiet --user-agent="${USER_AGENT}" "${url}" \
+      | jq --join-output ".[0] | .[] | .[0]"
+  )
+
+  notify-send --icon=info "${selection}" "${translation@E}"
+}
+
+main "$@"
