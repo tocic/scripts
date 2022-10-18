@@ -128,10 +128,8 @@ function update_dir() {
   local -r exc_patterns="$3"
   local -r jobs="$4"
 
-  {
-    local excluded_dirs
-    excluded_dirs=$(<"${dir}/${exc_filename}")
-  } 2>/dev/null
+  local excluded_dirs
+  { excluded_dirs=$(<"${dir}/${exc_filename}"); } 2>/dev/null
 
   local subdir
   for subdir in "${dir}"/*; do
@@ -171,9 +169,9 @@ function update_dir() {
 #   DEFAULT_EXC_PATTERNS - default excluded patterns
 #   DEFAULT_JOBS_NUMBER - default number of jobs for makepkg
 #   DEFAULT_REPO - default AUR repository path
+#   HELP - help message
 #   L_OPTS - long non-positional options (e.g. --help)
 #   OPTS - short non-positional options (e.g. --h)
-#   HELP - help message
 #   USAGE_ERR_MSG - usage error message
 #######################################
 function main() {
