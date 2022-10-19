@@ -1,0 +1,129 @@
+#!/bin/bash
+#
+# Browse installed packages along with info about them.
+#
+# Dependencies: coreutils, fzf, less, pacman, pacman-contrib, sed
+
+readonly L_OPTS="help"
+readonly OPTS="h"
+
+readonly CMD="${0##*/}"
+readonly USAGE="${CMD} [OPTION]..."
+readonly USAGE_ERR_MSG=$(
+  cat <<END
+Usage: ${USAGE}
+Try '${CMD} --help' for more information.
+END
+)
+readonly HELP=$(
+  cat <<END
+SYNOPSIS
+  ${USAGE}
+
+DESCRIPTION
+  Browse installed packages along with info about them.
+  Press ENTER on any package for a detailed view that includes files.
+
+OPTIONS
+  -h, --help
+    display this help and exit
+END
+)
+
+#######################################
+# Align command according to the 'pacman --info' format
+# Arguments:
+#  cmd - command to align
+#  name - first column of the format (every character before ':')
+#######################################
+function align_cmd() {
+  local -r cmd="$1"
+  local -r name="$2"
+
+  echo "${cmd} | sed '1s/^/${name}: /' | sed '2,\$s/^/                  /'"
+}
+
+#######################################
+# Main function
+# Globals:
+#   CMD - script basename
+#   HELP - help message
+#   L_OPTS - long non-positional options (e.g. --help)
+#   OPTS - short non-positional options (e.g. --h)
+#   USAGE_ERR_MSG - usage error message
+#######################################
+function main() {
+  local opts
+  opts=$(
+    getopt \
+      --options=${OPTS} --longoptions=${L_OPTS} \
+      --name "${CMD}" \
+      -- "$@"
+  )
+  if (($? != 0)); then
+    echo "${USAGE_ERR_MSG}"
+    exit 2
+  fi
+
+  eval set -- "${opts}"
+
+  local need_help=false
+
+  while true; do
+    case "$1" in
+      -h | --help)
+        need_help=true
+        shift
+        break
+        ;;
+      --)
+        shift
+        break
+        ;;
+    esac
+  done
+
+  if [[ $need_help == true ]]; then
+    echo "${HELP}"
+    exit 0
+  fi
+
+  local -r files_list_cmd=$(
+    align_cmd "pacman --query --list --quiet {}" "Package Files   "
+  )
+  local -r files_status_cmd=$(
+    align_cmd "LC_ALL=C pacman --query --check --check {} 2>&1" \
+              "Files Status    "
+  )
+  local -r package_info_cmd="LC_ALL=C pacman --query --info {} \
+                               | head --bytes=-1"
+  local -r reversed_tree_cmd=$(
+    align_cmd "pactree --optional=-1 --reverse {}" "Reversed Tree   "
+  )
+
+  local -r preview_cmd="${package_info_cmd} ; ${reversed_tree_cmd}"
+
+  local -r on_enter_cmd="\
+  { \
+    ${package_info_cmd}; \
+    ${reversed_tree_cmd}; \
+    ${files_list_cmd}; \
+    ${files_status_cmd}; \
+  } | less --mouse"
+
+  pacman --query --quiet \
+    | fzf --preview "${preview_cmd}" \
+      --bind "enter:execute(${on_enter_cmd})" \
+      --preview-window=right,70% \
+      --reverse
+
+  declare -ir exit_code=$?
+
+  if ((exit_code == 130)); then
+    exit 0
+  else
+    exit ${exit_code}
+  fi
+}
+
+main "$@"
