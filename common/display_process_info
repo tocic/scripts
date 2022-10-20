@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# Display info about the process.
+#
+# Dependencies: coreutils, procps-ng, util-linux
+
+readonly L_OPTS="help"
+readonly OPTS="h"
+
+readonly CMD="${0##*/}"
+readonly USAGE="${CMD} [OPTION]... PATTERN"
+readonly USAGE_ERR_MSG=$(
+  cat <<END
+Usage: ${USAGE}
+Try '${CMD} --help' for more information.
+END
+)
+readonly HELP=$(
+  cat <<END
+SYNOPSIS
+  ${USAGE}
+
+DESCRIPTION
+  Display info about the newest of the matching PATTERN processes.
+
+OPTIONS
+  -h, --help
+    display this help and exit
+END
+)
+
+opts=$(getopt --options=${OPTS} --longoptions=${L_OPTS} --name "${CMD}" -- "$@")
+if (($? != 0)); then
+  echo "${USAGE_ERR_MSG}"
+  exit 2
+fi
+
+eval set -- "${opts}"
+
+need_help=false
+
+while true; do
+  case "$1" in
+    -h | --help)
+      need_help=true
+      shift
+      break
+      ;;
+    --)
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ $need_help == true ]]; then
+  echo "${HELP}"
+  exit 0
+fi
+
+if (($# != 1)); then
+  echo "${CMD}: expected 1 argument; got $#"
+  echo "${USAGE_ERR_MSG}"
+  exit 2
+fi
+
+readonly PID=$(pgrep --ignore-case --newest "$1")
+
+if [[ -z ${PID} ]]; then
+  echo "${CMD}: found no process matching the pattern '$1'"
+  exit 1
+fi
+
+ps --pid "${PID}" \
+  --format "%cpu %mem thcount=THREADS start pid comm=PNAME" \
+  | column --table
