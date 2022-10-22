@@ -15,7 +15,7 @@ Usage: ${USAGE}
 Try '${CMD} --help' for more information.
 END
 )
-readonly USAGE=$(
+readonly HELP=$(
   cat <<END
 SYNOPSIS
   ${USAGE}
@@ -54,7 +54,7 @@ while true; do
 done
 
 if [[ $need_help == true ]]; then
-  echo "${USAGE}"
+  echo "${HELP}"
   exit 0
 fi
 
