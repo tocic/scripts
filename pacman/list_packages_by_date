@@ -2,7 +2,7 @@
 #
 # List packages sorted by installation date.
 #
-# Dependencies: coreutils, expac, util-linux
+# Dependencies: coreutils, gawk, pacman, util-linux
 
 readonly L_OPTS="help"
 readonly OPTS="h"
@@ -64,5 +64,7 @@ if (($# != 0)); then
   exit 2
 fi
 
-expac --timefmt="%Y-%m-%d %T" '%l %n' \
-  | sort
+LC_ALL=C pacman --query --info \
+  | awk '/^Name/{name=$3}/^Install Date/{print $8, $5, $6, $7, name}' \
+  | LC_ALL=C sort -k1,1n -k2,2M -k3n \
+  | column --table
