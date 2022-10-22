@@ -2,7 +2,11 @@
 #
 # Increase/decrease keyboard backlight.
 #
-# Dependencies: coreutils, dbus, grep, upower
+# Dependencies: coreutils, dbus, upower, util-linux
+
+readonly DBUS_CONNECTION="org.freedesktop.UPower"
+readonly DBUS_INTERFACE="${DBUS_CONNECTION}.KbdBacklight"
+readonly DBUS_OBJECT_PATH="/org/freedesktop/UPower/KbdBacklight"
 
 readonly L_OPTS="help"
 readonly OPTS="h"
@@ -29,75 +33,115 @@ OPTIONS
 END
 )
 
-opts=$(getopt --options=${OPTS} --longoptions=${L_OPTS} --name "${CMD}" -- "$@")
-if (($? != 0)); then
-  echo "${USAGE_ERR_MSG}"
-  exit 2
-fi
+#######################################
+# Get the integer value of kbd backlight via dbus
+# Globals:
+#  DBUS_CONNECTION - name of the dbus connection to receive the message
+#  DBUS_INTERFACE - name of the D-Bus interface
+#  DBUS_OBJECT_PATH - path to the D-Bus object
+# Arguments:
+#  method - dbus interface method (e.g., GetBrightness)
+#######################################
+function get_dbus_kbd_backlight() {
+  local -r method="$1"
 
-eval set -- "${opts}"
+  dbus-send --print-reply="literal" --system \
+    --dest="${DBUS_CONNECTION}" \
+    "${DBUS_OBJECT_PATH}" "${DBUS_INTERFACE}.${method}" \
+    | cut --delimiter " " --fields 5
+}
 
-need_help=false
+#######################################
+# Set the integer value of kbd backlight via dbus
+# Globals:
+#  DBUS_CONNECTION - name of the dbus connection to receive the message
+#  DBUS_INTERFACE - name of the D-Bus interface
+#  DBUS_OBJECT_PATH - path to the D-Bus object
+# Arguments:
+#  brightness - int32 value to set kbd brightness to
+#######################################
+function set_dbus_kbd_backlight() {
+  local -ir brightness="$1"
 
-while true; do
-  case "$1" in
-    -h | --help)
-      need_help=true
-      shift
-      break
-      ;;
-    --)
-      shift
-      break
-      ;;
-  esac
-done
+  dbus-send --system --type=method_call \
+    --dest="${DBUS_CONNECTION}" \
+    ${DBUS_OBJECT_PATH} "${DBUS_INTERFACE}.SetBrightness" \
+    "int32:${brightness}"
+}
 
-if [[ $need_help == true ]]; then
-  echo "${HELP}"
-  exit 0
-fi
-
-if (($# != 1)) || [[ $1 != "+" && $1 != "-" ]]; then
-  if (($# != 1)); then
-    echo "${CMD}: expected 1 argument; got $#"
-  else
-    echo "${CMD}: expected '+' or '-'; got $1"
+#######################################
+# Main function
+# Globals:
+#   CMD - script basename
+#   HELP - help message
+#   L_OPTS - long non-positional options (e.g. --help)
+#   OPTS - short non-positional options (e.g. --h)
+#   USAGE_ERR_MSG - usage error message
+#######################################
+function main() {
+  local opts
+  opts=$(
+    getopt \
+      --options=${OPTS} --longoptions=${L_OPTS} \
+      --name "${CMD}" \
+      -- "$@"
+  )
+  if (($? != 0)); then
+    echo "${USAGE_ERR_MSG}"
+    exit 2
   fi
-  echo "${USAGE_ERR_MSG}"
-  exit 2
-fi
 
-declare -ir min_brightness=0
-declare -ir max_brightness=$(
-  dbus-send --system --type=method_call --print-reply \
-    --dest="org.freedesktop.UPower" \
-    "/org/freedesktop/UPower/KbdBacklight" \
-    "org.freedesktop.UPower.KbdBacklight.GetMaxBrightness" \
-    | grep --only-matching --perl-regexp "int32 \K\d+"
-)
-declare -i brightness=$(
-  dbus-send --system --type=method_call --print-reply \
-    --dest="org.freedesktop.UPower" \
-    "/org/freedesktop/UPower/KbdBacklight" \
-    "org.freedesktop.UPower.KbdBacklight.GetBrightness" \
-    | grep --only-matching --perl-regexp "int32 \K\d+"
-)
+  eval set -- "${opts}"
 
-if [[ $1 == "+" ]]; then
-  ((brightness += 1))
-else
-  ((brightness -= 1))
-fi
+  local need_help=false
 
-if ((brightness > max_brightness)); then
-  brightness=max_brightness
-elif ((brightness < min_brightness)); then
-  brightness=min_brightness
-fi
+  while true; do
+    case "$1" in
+      -h | --help)
+        need_help=true
+        shift
+        break
+        ;;
+      --)
+        shift
+        break
+        ;;
+    esac
+  done
 
-dbus-send --system --type=method_call \
-  --dest="org.freedesktop.UPower" \
-  "/org/freedesktop/UPower/KbdBacklight" \
-  "org.freedesktop.UPower.KbdBacklight.SetBrightness" \
-  "int32:${brightness}"
+  if [[ $need_help == true ]]; then
+    echo "${HELP}"
+    exit 0
+  fi
+
+  if (($# != 1)) || [[ $1 != "+" && $1 != "-" ]]; then
+    if (($# != 1)); then
+      echo "${CMD}: expected 1 argument; got $#"
+    else
+      echo "${CMD}: expected '+' or '-'; got $1"
+    fi
+    echo "${USAGE_ERR_MSG}"
+    exit 2
+  fi
+
+  local -ir min_brightness=0
+  local -ir max_brightness=$(get_dbus_kbd_backlight "GetMaxBrightness")
+
+  local -i brightness=$(get_dbus_kbd_backlight "GetBrightness")
+
+  if [[ $1 == "+" ]]; then
+    ((brightness += 1))
+  else
+    ((brightness -= 1))
+  fi
+
+  if ((brightness > max_brightness)); then
+    brightness=max_brightness
+  elif ((brightness < min_brightness)); then
+    brightness=min_brightness
+  fi
+
+  set_dbus_kbd_backlight "${brightness}"
+}
+
+main "$@"
