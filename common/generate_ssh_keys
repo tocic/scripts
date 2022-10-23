@@ -4,8 +4,8 @@
 #
 # Dependencies: coreutils, openssh, util-linux
 
-readonly L_OPTS="help"
-readonly OPTS="h"
+readonly L_OPTS="comment:,help"
+readonly OPTS="C:c:h"
 
 readonly CMD="${0##*/}"
 readonly USAGE="${CMD} [OPTION]... FILE"
@@ -24,6 +24,8 @@ DESCRIPTION
   Generate an SSH key pair {FILE, FILE.pub} using the ed25519 key type.
 
 OPTIONS
+  -C, -c, --comment COMMENT, --comment=COMMENT
+    add a comment to the keys (no comment by default)
   -h, --help
     display this help and exit
 END
@@ -37,10 +39,15 @@ fi
 
 eval set -- "${opts}"
 
+comment=""
 need_help=false
 
 while true; do
   case "$1" in
+    -C | -c | --comment)
+      comment="$2"
+      shift 2
+      ;;
     -h | --help)
       need_help=true
       shift
@@ -64,4 +71,4 @@ if (($# != 1)); then
   exit 2
 fi
 
-ssh-keygen -a 128 -C "" -f "$1" -t "ed25519"
+ssh-keygen -a 128 -C "${comment}" -f "$1" -t "ed25519"
