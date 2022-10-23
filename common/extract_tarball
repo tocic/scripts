@@ -1,14 +1,15 @@
 #!/bin/bash
 #
-# Create a .tar archive.
+# Extract files from an optionally compressed tar archive.
 #
 # Dependencies: coreutils, tar, util-linux
+# Optional dependencies: bzip2, gzip, lzip, lzop, ncompress, xz, zstd
 
 readonly L_OPTS="help"
 readonly OPTS="h"
 
 readonly CMD="${0##*/}"
-readonly USAGE="${CMD} [OPTION]... ARCHIVE FILE..."
+readonly USAGE="${CMD} [OPTION]... ARCHIVE DIR"
 readonly USAGE_ERR_MSG=$(
   cat <<END
 Usage: ${USAGE}
@@ -21,7 +22,16 @@ SYNOPSIS
   ${USAGE}
 
 DESCRIPTION
-  Create an ARCHIVE.tar from FILEs.
+  Extract files from a tarball named ARCHIVE to the directory DIR.
+  Also decompress the archive if it has one of the following extensions:
+    .bz .bz2 .tbz .tbz2 - bzip2
+    .gz .taz .tgz       - gzip
+    .lz                 - lzip
+    .lzo                - lzop
+    .Z                  - ncompress
+    .lzma .tlz .txz .xz - xz
+    .zst                - zstd
+  The corresponding optional dependencies must be satisfied.
 
 OPTIONS
   -h, --help
@@ -58,10 +68,13 @@ if [[ $need_help == true ]]; then
   exit 0
 fi
 
-if (($# < 2)); then
-  echo "${CMD}: expected at least 2 arguments; got $#"
+if (($# != 2)); then
+  echo "${CMD}: expected 2 arguments; got $#"
   echo "${USAGE_ERR_MSG}"
   exit 2
 fi
 
-tar --create --file "$1.tar" --verbose "${@:2}"
+mkdir --parents "$2" \
+  && tar --extract --file "$1" \
+       --verbose \
+       --directory "$2"
