@@ -64,4 +64,4 @@ if (($# != 1)); then
   exit 2
 fi
 
-ssh-keygen -C "" -f "$1" -t "ed25519"
+ssh-keygen -a 128 -C "" -f "$1" -t "ed25519"
