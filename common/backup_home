@@ -6,8 +6,8 @@
 
 readonly DEFAULT_ARCHIVE_NAME="{user}_{now:%Y-%m-%d_%H:%M:%S}"
 
-readonly L_OPTS="help"
-readonly OPTS="h"
+readonly L_OPTS="archive_name:,help"
+readonly OPTS="a:h"
 
 readonly CMD="${0##*/}"
 readonly USAGE="${CMD} [OPTION]... REPO_DIR"
@@ -26,9 +26,9 @@ DESCRIPTION
   Backup the home directory to the borg archive REPO_DIR::ARCHIVE.
 
 OPTIONS
-  a, --archive_name ARCHIVE, --archive_name=ARCHIVE
+  -a, --archive_name ARCHIVE, --archive_name=ARCHIVE
     change the borg archive name from \$user_\$date_\$time to ARCHIVE
-  h, --help
+  -h, --help
     display this help and exit
 END
 )
