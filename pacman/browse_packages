@@ -88,6 +88,12 @@ function main() {
     exit 0
   fi
 
+  if (($# != 0)); then
+    echo "${CMD}: expected 0 arguments; got $#"
+    echo "${USAGE_ERR_MSG}"
+    exit 2
+  fi
+
   local -r files_list_cmd=$(
     align_cmd "pacman --query --list --quiet {}" "Package Files   "
   )
