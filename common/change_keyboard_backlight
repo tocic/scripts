@@ -4,6 +4,8 @@
 #
 # Dependencies: coreutils, dbus, upower, util-linux
 
+set -o nounset -o pipefail
+
 readonly DBUS_CONNECTION="org.freedesktop.UPower"
 readonly DBUS_INTERFACE="${DBUS_CONNECTION}.KbdBacklight"
 readonly DBUS_OBJECT_PATH="/org/freedesktop/UPower/KbdBacklight"

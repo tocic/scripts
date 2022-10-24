@@ -5,6 +5,8 @@
 # Dependencies: coreutils, tar, util-linux
 # Optional dependencies: bzip2, gzip, lzip, lzop, ncompress, xz, zstd
 
+set -o nounset -o pipefail
+
 readonly L_OPTS="help"
 readonly OPTS="h"
 

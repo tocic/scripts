@@ -4,6 +4,8 @@
 #
 # Dependencies: coreutils, gawk, jq, libnotify, sed, util-linux, wget, xsel
 
+set -o nounset -o pipefail
+
 readonly API_ENDPOINT="https://translate.googleapis.com/translate_a/single"
 readonly USER_AGENT="Mozilla/5.0"
 

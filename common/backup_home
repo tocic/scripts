@@ -4,6 +4,8 @@
 #
 # Dependencies: coreutils, borg, util-linux
 
+set -o nounset -o pipefail
+
 readonly DEFAULT_ARCHIVE_NAME="{user}_{now:%Y-%m-%d_%H:%M:%S}"
 
 readonly L_OPTS="archive_name:,help"

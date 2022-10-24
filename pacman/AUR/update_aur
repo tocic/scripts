@@ -4,6 +4,8 @@
 #
 # Dependencies: coreutils, git, pacman, util-linux
 
+set -o nounset -o pipefail
+
 readonly DEFAULT_EXC_FILE="need_manual_intervention"
 readonly DEFAULT_EXC_PATTERNS="test_.+,.+_test"
 readonly DEFAULT_JOBS=1
@@ -90,10 +92,11 @@ function update_pkg() {
   local -r jobs="$2"
 
   local -r parent_dir="${pkg%/*}"
+  
+  local dep_string=""
   local install_options="--install"
-
   if is_pkg "${parent_dir}"; then
-    local -r dep_string=" (dependency of the package ${parent_dir})"
+    dep_string=" (dependency of the package ${parent_dir})"
     install_options+=" --asdeps"
   fi
 
@@ -154,7 +157,7 @@ function update_dir() {
       done
 
       update_dir "${subdir}" "${exc_filename}" "${exc_patterns}" "${jobs}"
-      update_pkg "${subdir}"
+      update_pkg "${subdir}" "${jobs}"
     else
       update_dir "${subdir}" "${exc_filename}" "${exc_patterns}" "${jobs}"
     fi

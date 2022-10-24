@@ -4,6 +4,8 @@
 #
 # Dependencies: coreutils, git, pacman, util-linux
 
+set -o nounset -o pipefail
+
 readonly DEFAULT_EXC_FILE="need_manual_intervention"
 readonly DEFAULT_EXC_PATTERNS="test_.+,.+_test"
 readonly DEFAULT_REPO="${HOME}/AUR"
@@ -88,8 +90,9 @@ function clean_pkg() {
 
   local -r parent_dir="${pkg%/*}"
 
+  local dep_string=""
   if is_pkg "${parent_dir}"; then
-    local -r dep_string=" (dependency of the package ${parent_dir})"
+    dep_string=" (dependency of the package ${parent_dir})"
   fi
 
   echo "pkg ${pkg}${dep_string}"

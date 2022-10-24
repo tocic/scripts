@@ -4,6 +4,8 @@
 #
 # Dependencies: coreutils, grep, util-linux
 
+set -o nounset -o pipefail
+
 readonly L_OPTS="help,optional"
 readonly OPTS="ho"
 

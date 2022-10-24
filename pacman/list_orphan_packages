@@ -4,6 +4,8 @@
 #
 # Dependencies: coreutils, pacman, util-linux
 
+set -o nounset -o pipefail
+
 readonly L_OPTS="help"
 readonly OPTS="h"
 

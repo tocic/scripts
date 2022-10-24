@@ -4,6 +4,8 @@
 #
 # Dependencies: coreutils, grep, util-linux, xorg-xinput
 
+set -o nounset -o pipefail
+
 readonly L_OPTS="help"
 readonly OPTS="h"
 
