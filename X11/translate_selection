@@ -114,10 +114,17 @@ function main() {
   local url="${API_ENDPOINT}?client=gtx&sl=auto&tl=$1&dt=t&q="
   url+=$(urlencode "${selection}")
 
-  local -r translation=$(
+  local translation
+  translation=$(
     wget --output-document="-" --quiet --user-agent="${USER_AGENT}" "${url}" \
-      | jq --join-output ".[0] | .[] | .[0]"
+      | jq --join-output ".[0] | .[] | .[0]" 2>/dev/null
   )
+
+  if (($? != 0)); then
+    echo "${CMD}: unable to translate the selection '${selection}'"
+    echo "Try to check the selection validity and your internet connection"
+    exit 1
+  fi
 
   notify-send --icon=info "${selection}" "${translation@E}"
 }
