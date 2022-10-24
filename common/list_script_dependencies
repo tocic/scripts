@@ -1,0 +1,80 @@
+#!/bin/bash
+#
+# List dependencies of the script.
+#
+# Dependencies: coreutils, grep, util-linux
+
+readonly L_OPTS="help,optional"
+readonly OPTS="ho"
+
+readonly CMD="${0##*/}"
+readonly USAGE="${CMD} [OPTION]... FILE"
+readonly USAGE_ERR_MSG=$(
+  cat <<END
+Usage: ${USAGE}
+Try '${CMD} --help' for more information.
+END
+)
+readonly HELP=$(
+  cat <<END
+SYNOPSIS
+  ${USAGE}
+
+DESCRIPTION
+  List dependencies of the script FILE.
+
+OPTIONS
+  -h, --help
+    display this help and exit
+  -o, --optional
+    list optional dependencies instead of the required
+END
+)
+
+opts=$(getopt --options=${OPTS} --longoptions=${L_OPTS} --name "${CMD}" -- "$@")
+if (($? != 0)); then
+  echo "${USAGE_ERR_MSG}"
+  exit 2
+fi
+
+eval set -- "${opts}"
+
+need_help=false
+need_optional=false
+
+while true; do
+  case "$1" in
+    -h | --help)
+      need_help=true
+      shift
+      break
+      ;;
+    -o | --optional)
+      need_optional=true
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ $need_help == true ]]; then
+  echo "${HELP}"
+  exit 0
+fi
+
+if (($# != 1)); then
+  echo "${CMD}: expected 1 argument; got $#"
+  echo "${USAGE_ERR_MSG}"
+  exit 2
+fi
+
+prefix="# Dependencies:"
+if [[ $need_optional == true ]]; then
+  prefix="# Optional dependencies:"
+fi
+
+grep --only-match --perl-regexp "^${prefix}\s+\K.*" "$1" \
+  | tr --squeeze-repeats ", " "\n"
