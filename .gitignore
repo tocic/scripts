@@ -2,8 +2,8 @@
 !/**/
 
 !/.gitignore
-!/LICENSE.txt
 !/README.adoc
+!/UNLICENSE.txt
 
 !/.github/**
 !/X11/**
