@@ -8,8 +8,8 @@ set -o nounset -o pipefail
 
 readonly DEFAULT_BACKUP_DIR="${HOME}/backup/pacman"
 
-readonly L_OPTS="backup_dir:,help"
-readonly OPTS="d:h"
+readonly L_OPTS="backup_dir:,help,version"
+readonly OPTS="d:hVv"
 
 readonly CMD="${0##*/}"
 readonly USAGE="${CMD} [OPTION]..."
@@ -17,6 +17,14 @@ readonly USAGE_ERR_MSG=$(
   cat <<END
 Usage: ${USAGE}
 Try '${CMD} --help' for more information.
+END
+)
+readonly VERSION_INFO=$(
+  cat <<END
+${CMD} (scripts) 1.0.0
+
+This is free and unencumbered software released into the public domain.
+For more information, please refer to <https://unlicense.org/>.
 END
 )
 readonly HELP=$(
@@ -32,6 +40,8 @@ OPTIONS
     change the backup directory from ${DEFAULT_BACKUP_DIR} to DIR
   -h, --help
     display this help and exit
+  -V, -v, --version
+    display version and exit
 END
 )
 
@@ -45,6 +55,7 @@ eval set -- "${opts}"
 
 backup_dir="${DEFAULT_BACKUP_DIR}"
 need_help=false
+need_version=false
 
 while true; do
   case "$1" in
@@ -57,6 +68,11 @@ while true; do
       shift
       break
       ;;
+    -V | -v | --version)
+      need_version=true
+      shift
+      break
+      ;;
     --)
       shift
       break
@@ -66,6 +82,11 @@ done
 
 if [[ $need_help == true ]]; then
   echo "${HELP}"
+  exit 0
+fi
+
+if [[ $need_version == true ]]; then
+  echo "${VERSION_INFO}"
   exit 0
 fi
 
