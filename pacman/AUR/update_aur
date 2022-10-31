@@ -92,7 +92,7 @@ function update_pkg() {
   local -r jobs="$2"
 
   local -r parent_dir="${pkg%/*}"
-  
+
   local dep_string=""
   local install_options="--install"
   if is_pkg "${parent_dir}"; then

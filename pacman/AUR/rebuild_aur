@@ -167,7 +167,8 @@ function rebuild_dir() {
 #######################################
 function main() {
   local opts
-  opts=$(getopt \
+  opts=$(
+    getopt \
       --options=${OPTS} --longoptions=${L_OPTS} \
       --name "${CMD}" \
       -- "$@"
