@@ -117,11 +117,12 @@ function main() {
     ${reversed_tree_cmd}; \
     ${files_list_cmd}; \
     ${files_status_cmd}; \
-  } | less --mouse"
+  } | less"
 
   pacman --query --quiet \
     | fzf --preview "${preview_cmd}" \
       --bind "enter:execute(${on_enter_cmd})" \
+      --no-mouse \
       --preview-window=right,70% \
       --reverse
 
