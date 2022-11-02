@@ -2,6 +2,7 @@
 !/**/
 
 !/.gitignore
+!/CHANGELOG.md
 !/README.adoc
 !/UNLICENSE.txt
 
